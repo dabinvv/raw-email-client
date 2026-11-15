@@ -1,0 +1,19 @@
+# Maven build output
+target/
+*.class
+*.jar
+
+# Logs
+*.log
+
+# Local data / secrets
+mailbox/
+accounts.json
+
+# Local scratch files
+cp.txt
+
+# IDE
+.idea/
+*.iml
+.vscode/

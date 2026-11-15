@@ -1,0 +1,81 @@
+To demonstrate your project effectively, you need to tell a story: **from the raw network layer up to the advanced concurrent features.** Since this is a CLI application, your demo will be a live walkthrough of the terminal.
+
+Here is a step-by-step **Demo Script** designed to hit every mandatory and bonus requirement in about 5–7 minutes.
+
+### 🛠️ Pre-Demo Setup (Do this before starting)
+1.  **Clean Slate:** Delete `mailbox/` folder and `email_client.log` so the screen is clean.
+2.  **Server Check:** Ensure Postfix and Dovecot are running in WSL (`sudo service postfix start`, `sudo service dovecot start`).
+3.  **Terminal Layout:** Have two terminal windows open side-by-side:
+    *   **Left:** Your Java Client (`java -jar ...`)
+    *   **Right:** WSL Terminal (for sending test emails via `telnet` or `nc` to trigger the background poller).
+
+---
+
+### 🎬 The Demo Script
+
+#### Part 1: Introduction & Architecture (1 Minute)
+*   **Say:** "This is a lightweight email client built from scratch using Java 17 raw TCP sockets. It implements SMTP and POP3 protocols manually without any mail libraries like Jakarta Mail. It features multi-account support, TLS encryption, local JSON persistence, and a background polling thread."
+*   **Action:** Show the `pom.xml` briefly to highlight the **Gson** dependency and the **maven-shade-plugin** for the executable JAR.
+
+#### Part 2: Account Management & Persistence (Bonus B1) (1 Minute)
+*   **Action:** Start the app.
+*   **Say:** "On first launch, it auto-creates a default test account. Let’s add a second account to show multi-account isolation."
+*   **Action:**
+    1.  Go to **Option 5 (Manage Accounts)** → **Add New Account**.
+    2.  Name it "Work Mail", keep settings same as default.
+    3.  Go to **Option 5** → **Select Account** and switch to "Work Mail".
+*   **Say:** "Notice how the inbox is empty. Each account has its own isolated `./mailbox/<name>/` directory on disk."
+
+#### Part 3: Sending Emails via SMTP (Mandatory) (1 Minute)
+*   **Action:** Switch back to the "Local Test" account. Choose **Option 1 (Send Email)**.
+*   **Say:** "I’ll send three plain-text emails as required. The client manually handles the SMTP handshake: EHLO, AUTH LOGIN, and DATA with dot-stuffing."
+*   **Action:** Send 3 emails with distinct subjects:
+    1.  `Test Email 1`
+    2.  `Test Email 2` (Include a line starting with `.` to show dot-stuffing works).
+    3.  `Test Email 3`
+*   **Highlight:** Point out the **Send Latency** printed on the screen.
+
+#### Part 4: Fetching & Local Storage (Mandatory) (1 Minute)
+*   **Action:** Choose **Option 2 (Fetch Emails)**.
+*   **Say:** "Now I’ll fetch these from the Dovecot POP3 server. The client parses the raw email, extracts headers, and saves them as JSON files locally."
+*   **Action:**
+    1.  Show the "Fetched X messages" output.
+    2.  Choose **Option 3 (List Inbox)** to show the table.
+    3.  Choose **Option 4 (View Email)** and pick one. Show the body content.
+*   **Proof:** Open your file explorer and show the `mailbox/local_test/` folder with the new `.json` files.
+
+#### Part 5: Error Handling & Security (Mandatory) (1 Minute)
+*   **Say:** "The TRD requires robust error handling. Let’s test a few cases."
+*   **Action 1 (Wrong Password):**
+    1.  Go to **Manage Accounts** → **Edit** (or temporarily change password in `accounts.json`).
+    2.  Try to **Fetch**. Show the graceful `Authentication Failed` error.
+*   **Action 2 (Connection Refused):**
+    1.  In WSL terminal, stop Dovecot: `sudo service dovecot stop`.
+    2.  Try to **Fetch** in Java client. Show `Connection Refused` error.
+    3.  Restart Dovecot: `sudo service dovecot start`.
+*   **Security Check:** Open `email_client.log` and search for "test123". Show that it returns **nothing**. Explain your regex-based redaction.
+
+#### Part 6: Advanced Bonus Features (B2, B3, B4) (2 Minutes)
+
+**1. TLS/STARTTLS (Bonus B2):**
+*   **Say:** "I implemented STARTTLS to encrypt the connection. When enabled, the client upgrades the plaintext socket to an SSL socket mid-session."
+*   **Action:** Show an account with `useTls: true` in `accounts.json`. Send/Fetch with it and point to the log showing `TLS handshake successful`.
+
+**2. Background Polling (Bonus B4 - The "Wow" Factor):**
+*   **Say:** "Finally, the background poller. It runs on a separate daemon thread, opening independent sockets to check for new mail every 10 seconds."
+*   **Action:**
+    1.  Ensure the poller is active (check log for "Background poller started").
+    2.  In the **WSL Terminal**, send a quick email via telnet:
+        ```bash
+        echo -e "EHLO localhost\r\nMAIL FROM:<testuser@localhost>\r\nRCPT TO:<testuser@localhost>\r\nDATA\r\nSubject: Background Test\r\n\r\nThis is a test.\r\n.\r\nQUIT\r\n" | nc localhost 25
+        ```
+    3.  Wait ~10 seconds.
+    4.  **Watch the Java Client:** A notification `📬 New mail!` should appear automatically in the menu.
+    5.  Choose **Option 3** to show the new email appeared without manually fetching.
+
+**3. Search (Bonus B3):**
+*   **Action:** Choose **Option 6 (Search)**. Type "Background". Show it filtering the inbox instantly.
+
+#### Part 7: Conclusion (30 Seconds)
+*   **Say:** "In summary, this project demonstrates deep understanding of TCP sockets, application-layer protocols, concurrency, and secure coding practices. It meets all TRD requirements and exceeds them with four major bonus features."
+*   **Action:** Exit the application gracefully (Option 7) and show the `Background poller stopped` log entry.
