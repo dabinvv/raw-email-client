@@ -1,4 +1,5 @@
 # Lightweight Email Client: Technical Documentation
+
 **SMTP + POP3 Raw Socket Implementation with Advanced Bonus Features**
 
 ## 1. Project Overview
@@ -81,7 +82,7 @@ To understand and reproduce this project, the following knowledge is required:
 
 ### 4.1 High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      CLI User Interface                     │
 │  Menu loop, account management, search, notifications       │
@@ -138,13 +139,13 @@ To understand and reproduce this project, the following knowledge is required:
 ### 4.3 Data Flow Diagrams
 
 **Send Email Flow:**
-```
+```text
 User → CliUI → SmtpClient → [TLS Upgrade?] → NetworkUtil.sendLine()
   → Postfix:25 → Response parsed → Latency measured → Log written
 ```
 
 **Background Poll Flow:**
-```
+```text
 ScheduledExecutor → pollOnce() → NEW Pop3Client (independent socket)
   → Dovecot:110 → RETR messages → LocalMailbox.saveMessageIfNew()
   → Dedup check → Callback → CLI notification displayed
@@ -248,33 +249,39 @@ ScheduledExecutor → pollOnce() → NEW Pop3Client (independent socket)
 ## 10. How to Run
 
 ### Prerequisites
-1)  Java 17+ installed
 
-2)  WSL2 with Postfix and Dovecot running:
-# Install mail server packages
-sudo apt update
-sudo apt install postfix dovecot-pop3d -y
+1. Java 17+ installed
 
-# Start the services
-sudo service postfix start
-sudo service dovecot start
+2. WSL2 with Postfix and Dovecot running:
 
-# Verify they are listening on correct ports
-ss -tlnp | grep -E ':25|:110'
+   ```bash
+   # Install mail server packages
+   sudo apt update
+   sudo apt install postfix dovecot-pop3d -y
 
-3)  Test account configured (`testuser` / `test123`):
-# Create the user with a home directory
-sudo useradd -m -s /bin/bash testuser
+   # Start the services
+   sudo service postfix start
+   sudo service dovecot start
 
-# Set the password to 'test123'
-echo "testuser:test123" | sudo chpasswd
+   # Verify they are listening on correct ports
+   ss -tlnp | grep -E ':25|:110'
+   ```
 
-# Verify the user exists
-id testuser
+3. Test account configured (`testuser` / `test123`):
 
-# To list all users on your WSL2 Linux system
-cat /etc/passwd | grep -E "/home|/bin/bash"
+   ```bash
+   # Create the user with a home directory
+   sudo useradd -m -s /bin/bash testuser
 
+   # Set the password to 'test123'
+   echo "testuser:test123" | sudo chpasswd
+
+   # Verify the user exists
+   id testuser
+
+   # To list all users on your WSL2 Linux system
+   cat /etc/passwd | grep -E "/home|/bin/bash"
+   ```
 
 ### Build & Execute
 ```powershell
